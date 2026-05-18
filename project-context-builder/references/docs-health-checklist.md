@@ -2,6 +2,8 @@
 
 本文件定义模式4（Health-check）的检查项和标准。Agent按此清单逐项检查项目文档的健康状况。
 
+> **关于主提示词文件名**:下文表格里出现的 `AGENTS.md` 代指"项目实际使用的 Agent 主提示词文件"——按 `SKILL.md §0` / `tools-compat.md` 识别的结果替换为 `CLAUDE.md` / `.cursorrules` / `.cursor/rules/*.mdc` / `.windsurfrules` / `.github/copilot-instructions.md` / `AGENTS.md` 中的实际文件。
+
 ---
 
 ## 检查维度

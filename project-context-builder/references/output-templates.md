@@ -4,9 +4,11 @@
 
 ---
 
-## 模板1: Agent系统提示词 (AGENTS.md / CLAUDE.md)
+## 模板1: Agent 系统提示词(主文件)
 
-### 通用格式 (AGENTS.md)
+> **写文件前**:按 `SKILL.md §0` / `tools-compat.md` 识别 AI 工具,确定实际文件名(`CLAUDE.md` / `.cursorrules` / `.cursor/rules/*.mdc` / `.windsurfrules` / `.github/copilot-instructions.md` / `AGENTS.md`)。下方的内容骨架对所有工具通用,仅文件名和格式细节按工具调整。
+
+### 通用骨架(填入识别到的目标文件)
 
 ```markdown
 ---
@@ -146,13 +148,15 @@ status: active
 {标注尚未确认的信息，供后续完善}
 ```
 
-### Claude Code 专用格式 (CLAUDE.md)
+### 工具特定调整
 
-参考 `references/tools-compat.md` 中的格式要求。
+按识别到的工具,在通用骨架基础上做以下微调:
 
-### Cursor 专用格式 (.cursorrules / .mdc)
-
-参考 `references/tools-compat.md` 中的格式要求。
+- **Claude Code (`CLAUDE.md`)**: 可在文件顶部用 `@./AGENTS.md` 引入跨工具信源;支持 `@path` 引用其他文件。详见 `tools-compat.md`。
+- **Cursor (`.cursor/rules/*.mdc`)**: 拆成多个主题文件(api-rules.mdc / component-rules.mdc 等),每个文件加 `description` / `globs` / `alwaysApply` frontmatter。
+- **Windsurf (`.windsurfrules`)**: 单文件,纯 Markdown,不加 YAML frontmatter,规则按优先级排列。
+- **GitHub Copilot (`.github/copilot-instructions.md`)**: 偏简洁,聚焦编码模式与反模式。
+- **OpenCode / 多工具混用 / 通用 (`AGENTS.md`)**: 直接使用上方骨架,保留 YAML frontmatter。
 
 ---
 

@@ -1,19 +1,35 @@
 # AI编码工具兼容性指南
 
-本文件列出主流AI编码工具的系统提示词格式要求，Agent根据用户使用的工具选择对应的输出格式。
+本文件列出主流AI编码工具的系统提示词格式要求,Agent **必须先识别用户使用的工具**,再选择对应的原生输出格式。**默认不写 `AGENTS.md`**。
+
+---
+
+## 工具识别(写文件前的强制步骤)
+
+按以下顺序判断,命中即止:
+
+1. **项目根已存在配置文件** → 沿用该工具格式
+   - `CLAUDE.md` → Claude Code
+   - `.cursorrules` / `.cursor/rules/` → Cursor
+   - `.windsurfrules` → Windsurf
+   - `.github/copilot-instructions.md` → GitHub Copilot
+   - `AGENTS.md` → OpenCode / 跨工具通用
+2. **当前会话上下文(系统提示/环境)透露**了运行环境 → 取该工具
+3. **用户消息显式声明**("我用 Cursor") → 取声明
+4. **以上都没有** → 问用户,**不要静默默认 AGENTS.md**
 
 ---
 
 ## 工具对照表
 
-| 工具 | 配置文件 | 加载位置 | 格式特点 |
-|------|----------|----------|----------|
-| Claude Code | `CLAUDE.md` | 项目根目录（向上递归查找） | Markdown，支持@引用 |
-| Cursor | `.cursorrules` / `.cursor/rules/*.mdc` | 项目根目录或`.cursor/rules/` | Markdown + YAML frontmatter |
+| 工具 | 主配置文件 | 加载位置 | 格式特点 |
+|------|------------|----------|----------|
+| Claude Code | `CLAUDE.md` | 项目根目录(向上递归) | Markdown,支持 `@` 引用 |
+| Cursor | `.cursorrules` / `.cursor/rules/*.mdc` | 项目根 或 `.cursor/rules/` | Markdown + YAML frontmatter |
 | Windsurf | `.windsurfrules` | 项目根目录 | 纯文本/Markdown |
 | GitHub Copilot | `.github/copilot-instructions.md` | `.github/` 目录 | Markdown |
-| OpenCode | `AGENTS.md` | 项目根目录（及子目录） | Markdown + YAML frontmatter |
-| 通用/其他 | `AGENTS.md` | 项目根目录 | Markdown（本Skill默认输出） |
+| OpenCode | `AGENTS.md` | 项目根目录(及子目录) | Markdown + YAML frontmatter |
+| 跨工具/未知(且用户已确认要通用) | `AGENTS.md` | 项目根目录 | Markdown |
 
 ---
 
@@ -188,46 +204,54 @@ alwaysApply: {true/false}
 
 ---
 
-## AGENTS.md（通用格式）
+## AGENTS.md(跨工具单一信源,非默认)
+
+**何时使用**:
+- 团队混用多个 AI 工具(每个工具的原生文件用引用指向 AGENTS.md)
+- 当前工具是 OpenCode(原生支持)
+- 用户显式要求
+
+**不要**在以下情况静默写 AGENTS.md:
+- 当前运行环境就是 Claude Code / Cursor / Windsurf / Copilot 之一(应写各自的原生文件)
+- 未识别工具且未问用户
 
 ### 文件位置
 - 项目根目录: `./AGENTS.md`
-- 子目录也可放置，实现分层配置
+- 子目录也可放置,实现分层配置
 
-### 格式要求（本Skill默认输出）
-
-见 `output-templates.md` 中的"Agent系统提示词"模板。
+### 格式要求
+见 `output-templates.md` 中的"Agent 系统提示词"模板。
 
 ### 设计原则
 
-1. **单一信源**: AGENTS.md是真实文件（不是symlink），Claude Code的CLAUDE.md通过`@./AGENTS.md`引用它
-2. **分层配置**: 子目录可有自己的AGENTS.md，实现模块级配置
-3. **元数据驱动**: YAML frontmatter包含last_updated、scope等元数据
-4. **渐进式披露**: AI先读frontmatter判断是否需要继续读取
-5. **跨工具兼容**: 大多数工具原生支持或可以适配
+1. **单一信源**: AGENTS.md 是真实文件(不是 symlink),其他工具的配置文件以引用方式指向它
+2. **分层配置**: 子目录可有自己的 AGENTS.md,实现模块级配置
+3. **元数据驱动**: YAML frontmatter 包含 last_updated、scope 等元数据
+4. **跨工具兼容**: 大多数工具原生支持或可以适配
 
 ### 与其他工具的协作
 
 ```text
-AGENTS.md          <- 源文件（source of truth）
-  ├── CLAUDE.md    <- 包含 "@./AGENTS.md"（import）
-  ├── .cursorrules <- 可同步规则子集
-  └── .windsurfrules <- 可同步规则子集
+AGENTS.md          <- 跨工具信源
+  ├── CLAUDE.md    <- 含 "@./AGENTS.md"(Claude Code 主文件)
+  ├── .cursorrules <- 同步规则子集
+  └── .windsurfrules <- 同步规则子集
 ```
+
 
 ---
 
 ## 工具选择决策树
 
-Agent在输出前询问用户（或推断）：
-
 ```
-用户使用什么AI编码工具？
-├── Claude Code → 输出 CLAUDE.md + AGENTS.md
-├── Cursor → 输出 .cursor/rules/*.mdc + AGENTS.md
-├── Windsurf → 输出 .windsurfrules + AGENTS.md
-├── GitHub Copilot → 输出 AGENTS.md + .github/copilot-instructions.md
-└── 不确定/多个工具 → 输出 AGENTS.md + 格式转换说明
+1. 先执行"工具识别"(本文件顶部) → 得到 {tool}
+2. 按 {tool} 产出主文件:
+   ├── Claude Code      → CLAUDE.md(若团队也用 AGENTS.md,在 CLAUDE.md 顶部加 @./AGENTS.md)
+   ├── Cursor           → .cursor/rules/*.mdc(推荐) 或 .cursorrules
+   ├── Windsurf         → .windsurfrules
+   ├── GitHub Copilot   → .github/copilot-instructions.md
+   ├── OpenCode         → AGENTS.md
+   └── 多工具混用       → AGENTS.md(单一信源) + 各工具的引用/转换文件
+3. 未识别 → 必须先问用户,不要静默写 AGENTS.md
 ```
 
-如果用户未指定，默认输出 `AGENTS.md`（通用格式），并提供其他格式的转换指引。
