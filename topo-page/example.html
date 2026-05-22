@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>Topo Page 示例</title>
+<style>
+:root { --bg: #fafaf9; --fg: #1c1b1a; --muted: #6b6964; --border: #e6e4e0; --accent: #c96442; --surface: #ffffff; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.6 -apple-system, system-ui, sans-serif; }
+
+.topo-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 24px; margin: 20px; overflow: visible; }
+.topo-wrap svg { display: block; }
+
+/* ── Node categories ── */
+.node-box { cursor: pointer; }
+.node-box rect { rx: 6; ry: 6; transition: filter .2s; }
+.node-box:hover rect { filter: brightness(0.95); }
+.c-source  rect { fill: #f5f5f4; stroke: #78716c; stroke-width: 1.5; }
+.c-source  text { fill: #57534e; }
+.c-gateway rect { fill: #ecfeff; stroke: #06b6d4; stroke-width: 1.5; }
+.c-gateway text { fill: #0e7490; }
+.c-service rect { fill: #f0fdf4; stroke: #22c55e; stroke-width: 1.5; }
+.c-service text { fill: #15803d; }
+.c-storage rect { fill: #eef2ff; stroke: #6366f1; stroke-width: 1.5; }
+.c-storage text { fill: #4f46e5; }
+.c-control rect { fill: #fff7ed; stroke: #fb923c; stroke-width: 1.5; }
+.c-control text { fill: #c2410c; }
+
+/* ── Edge types ── */
+.arrow-line    { fill: none; stroke: #78716c; stroke-width: 1.8; }
+.arrow-data    { fill: none; stroke: #15803d; stroke-width: 2.2; }
+.arrow-signal  { fill: none; stroke: #a16207; stroke-width: 1.8; stroke-dasharray: 6 3; }
+.arrow-cmd     { fill: none; stroke: #c2410c; stroke-width: 1.8; stroke-dasharray: 4 2; }
+.arrow-redirect{ fill: none; stroke: #7c3aed; stroke-width: 1.8; stroke-dasharray: 8 3; }
+.arrow-label { fill: var(--muted); font-size: 11px; text-anchor: middle; }
+.arrow-label-bg { fill: #ffffff; stroke: #e6e4e0; stroke-width: 0.5; opacity: 0.92; }
+
+/* ── Tooltip ── */
+.tip { display: none; position: fixed; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px; max-width: 260px; font-size: 13px; z-index: 999; box-shadow: 0 2px 8px rgba(0,0,0,0.08); pointer-events: none; }
+.tip-title { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+.tip-repo { color: var(--accent); font-size: 12px; margin-bottom: 6px; }
+.tip-desc { color: var(--muted); line-height: 1.5; }
+</style>
+</head>
+<body>
+
+<h2 style="text-align:center; margin:20px 0 8px;">S0 — 基本链路</h2>
+<div class="topo-wrap" id="s0"></div>
+
+<h2 style="text-align:center; margin:20px 0 8px;">S1 — 回边路由</h2>
+<div class="topo-wrap" id="s1"></div>
+
+<h2 style="text-align:center; margin:20px 0 8px;">S2 — Stub 悬空箭头</h2>
+<div class="topo-wrap" id="s2"></div>
+
+<div class="tip" id="tooltip">
+  <div class="tip-title" id="tip-title"></div>
+  <div class="tip-repo" id="tip-repo"></div>
+  <div class="tip-desc" id="tip-desc"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/dagre@0.8.5/dist/dagre.min.js"></script>
+<script>
+// ======================== CONFIG ========================
+const CFG = {
+  TEXT_PADDING: 28, NODE_HEIGHT: 40,
+  RANKSEP: 80, NODESEP: 50, EDGESEP: 10, MARGINX: 30, MARGINY: 50,
+  PORT_OFFSET: 4, DEFAULT_STUB_LENGTH: 50
+};
+
+// ======================== SVG Helpers ========================
+const SVG_NS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs) {
+  const e = document.createElementNS(SVG_NS, tag);
+  if (attrs) Object.entries(attrs).forEach(([k, v]) => e.setAttribute(k, v));
+  return e;
+}
+
+function createDefs(prefix) {
+  const defs = el('defs');
+  const types = [
+    { id: prefix + '-ah-default', fill: '#78716c' },
+    { id: prefix + '-ah-data',    fill: '#15803d' },
+    { id: prefix + '-ah-signal',  fill: '#a16207' },
+    { id: prefix + '-ah-cmd',     fill: '#c2410c' },
+    { id: prefix + '-ah-redirect',fill: '#7c3aed' }
+  ];
+  types.forEach(t => {
+    const m = el('marker', { id: t.id, markerWidth: 4, markerHeight: 2.8, refX: 3.5, refY: 1.4, orient: 'auto' });
+    const p = el('polygon', { points: '0 0,4 1.4,0 2.8' });
+    p.setAttribute('fill', t.fill);
+    m.appendChild(p);
+    defs.appendChild(m);
+  });
+  return defs;
+}
+
+// ======================== Text Measurement ========================
+const _measureSvg = document.createElementNS(SVG_NS, 'svg');
+_measureSvg.style.cssText = 'position:absolute;visibility:hidden;width:0;height:0;';
+const _measureText = document.createElementNS(SVG_NS, 'text');
+_measureText.setAttribute('font-family', '-apple-system, system-ui, sans-serif');
+_measureSvg.appendChild(_measureText);
+document.body.appendChild(_measureSvg);
+
+function measureNodeWidth(label, fontSize, fontWeight) {
+  _measureText.setAttribute('font-size', fontSize);
+  _measureText.setAttribute('font-weight', fontWeight);
+  _measureText.textContent = label;
+  return Math.ceil(_measureText.getComputedTextLength()) + CFG.TEXT_PADDING;
+}
+
+function measureLabelWidth(text) {
+  _measureText.setAttribute('font-size', 11);
+  _measureText.setAttribute('font-weight', 400);
+  _measureText.textContent = text;
+  return Math.ceil(_measureText.getComputedTextLength()) + 14;
+}
+
+// ======================== Dagre Layout Engine ========================
+function buildDagreGraph(scenario) {
+  const { nodes, edges } = scenario;
+  const g = new dagre.graphlib.Graph();
+  g.setGraph({
+    rankdir: 'TB',
+    ranksep: CFG.RANKSEP, nodesep: CFG.NODESEP, edgesep: CFG.EDGESEP,
+    marginx: CFG.MARGINX, marginy: CFG.MARGINY
+  });
+  g.setDefaultEdgeLabel(function() { return {}; });
+
+  nodes.forEach(n => {
+    const w = measureNodeWidth(n.label, n.fontSize, n.fontWeight);
+    const h = CFG.NODE_HEIGHT;
+    g.setNode(n.id, { width: w, height: h, label: n.label });
+  });
+
+  const stubEdges = [];
+  edges.forEach(e => {
+    if (!e.to) {
+      stubEdges.push(e);
+    } else {
+      const edgeOpts = {};
+      if (e.label) {
+        edgeOpts.label = e.label;
+        edgeOpts.width = measureLabelWidth(e.label);
+        edgeOpts.height = 20;
+      }
+      g.setEdge(e.from, e.to, edgeOpts);
+    }
+  });
+
+  dagre.layout(g);
+
+  const positions = {};
+  nodes.forEach(n => {
+    const dn = g.node(n.id);
+    positions[n.id] = {
+      x: dn.x - dn.width / 2, y: dn.y - dn.height / 2,
+      width: dn.width, height: dn.height,
+      cx: dn.x, cy: dn.y
+    };
+  });
+
+  const dagreEdges = [];
+  g.edges().forEach(eobj => {
+    const edgeData = g.edge(eobj);
+    const orig = edges.find(e => e.from === eobj.v && e.to === eobj.w);
+    dagreEdges.push({
+      from: eobj.v, to: eobj.w,
+      points: edgeData.points,
+      labelPos: edgeData.label ? { x: edgeData.x, y: edgeData.y } : null,
+      original: orig
+    });
+  });
+
+  const graphData = g.graph();
+  return { positions, dagreEdges, stubEdges, svgWidth: graphData.width, svgHeight: graphData.height };
+}
+
+// ======================== SVG Path from Dagre Points ========================
+function buildSvgPathFromDagrePoints(points) {
+  if (points.length < 2) return '';
+  if (points.length === 2) {
+    const p0 = points[0], p1 = points[1];
+    const midY = (p0.y + p1.y) / 2;
+    return `M ${p0.x} ${p0.y} C ${p0.x} ${midY} ${p1.x} ${midY} ${p1.x} ${p1.y}`;
+  }
+  const segs = [`M ${points[0].x} ${points[0].y}`];
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[Math.max(0, i - 1)];
+    const p1 = points[i];
+    const p2 = points[i + 1];
+    const p3 = points[Math.min(points.length - 1, i + 2)];
+    const cp1x = p1.x + (p2.x - p0.x) / 6;
+    const cp1y = p1.y + (p2.y - p0.y) / 6;
+    const cp2x = p2.x - (p3.x - p1.x) / 6;
+    const cp2y = p2.y - (p3.y - p1.y) / 6;
+    segs.push(`C ${cp1x} ${cp1y} ${cp2x} ${cp2y} ${p2.x} ${p2.y}`);
+  }
+  return segs.join(' ');
+}
+
+// ======================== Stub Edge Ports ========================
+function getStubPorts(e, positions) {
+  const fromPos = positions[e.from];
+  const len = e.stubLength || CFG.DEFAULT_STUB_LENGTH;
+  const dir = e.stubDirection || 'down';
+  let port, end;
+  if (dir === 'down') {
+    port = { x: fromPos.cx, y: fromPos.y + fromPos.height + CFG.PORT_OFFSET };
+    end  = { x: fromPos.cx, y: fromPos.y + fromPos.height + len };
+  } else if (dir === 'up') {
+    port = { x: fromPos.cx, y: fromPos.y - CFG.PORT_OFFSET };
+    end  = { x: fromPos.cx, y: fromPos.y - len };
+  } else if (dir === 'right') {
+    port = { x: fromPos.x + fromPos.width + CFG.PORT_OFFSET, y: fromPos.cy };
+    end  = { x: fromPos.x + fromPos.width + len, y: fromPos.cy };
+  } else {
+    port = { x: fromPos.x - CFG.PORT_OFFSET, y: fromPos.cy };
+    end  = { x: fromPos.x - len, y: fromPos.cy };
+  }
+  return { from: port, to: end };
+}
+
+// ======================== Label Collision Resolver ========================
+function resolveLabelCollisions(labelInfos) {
+  const MIN_GAP = 10, LABEL_H = 22, MAX_ITER = 24;
+  for (let iter = 0; iter < MAX_ITER; iter++) {
+    let changed = false;
+    for (let i = 0; i < labelInfos.length; i++) {
+      for (let j = i + 1; j < labelInfos.length; j++) {
+        const a = labelInfos[i], b = labelInfos[j];
+        const aL = a.x - a.w / 2, aR = a.x + a.w / 2, aT = a.y - LABEL_H / 2, aB = a.y + LABEL_H / 2;
+        const bL = b.x - b.w / 2, bR = b.x + b.w / 2, bT = b.y - LABEL_H / 2, bB = b.y + LABEL_H / 2;
+        const overlapX = Math.min(aR, bR) - Math.max(aL, bL);
+        const overlapY = Math.min(aB, bB) - Math.max(aT, bT);
+        if (overlapX > -MIN_GAP && overlapY > -MIN_GAP) {
+          if (overlapX < overlapY) {
+            const shift = Math.abs(overlapX) / 2 + MIN_GAP;
+            if (a.x <= b.x) { a.x -= shift; b.x += shift; } else { a.x += shift; b.x -= shift; }
+          } else {
+            const shift = Math.abs(overlapY) / 2 + MIN_GAP;
+            if (a.y <= b.y) { a.y -= shift; b.y += shift; } else { a.y += shift; b.y -= shift; }
+          }
+          changed = true;
+        }
+      }
+    }
+    if (!changed) break;
+  }
+}
+
+// ======================== Renderer ========================
+function renderNode(node, pos) {
+  const g = el('g', { class: 'node-box ' + node.category });
+  if (node.tip) g.setAttribute('data-tip', node.tip);
+  if (node.repo) g.setAttribute('data-repo', node.repo);
+  g.appendChild(el('rect', { x: pos.x, y: pos.y, width: pos.width, height: pos.height }));
+  const text = el('text', { x: pos.cx, y: pos.cy + 5, 'font-size': node.fontSize, 'font-weight': node.fontWeight, 'text-anchor': 'middle' });
+  text.textContent = node.label;
+  g.appendChild(text);
+  return g;
+}
+
+function renderScenario(scenario, container) {
+  const { positions, dagreEdges, stubEdges, svgWidth, svgHeight } = buildDagreGraph(scenario);
+  const prefix = scenario.id;
+  const markerMap = {
+    'arrow-data':    'url(#' + prefix + '-ah-data)',
+    'arrow-signal':  'url(#' + prefix + '-ah-signal)',
+    'arrow-cmd':     'url(#' + prefix + '-ah-cmd)',
+    'arrow-redirect':'url(#' + prefix + '-ah-redirect)'
+  };
+
+  const edgeRenderData = [];
+  dagreEdges.forEach(de => {
+    const orig = de.original;
+    const pathD = buildSvgPathFromDagrePoints(de.points);
+    const lineClasses = ['arrow-line'];
+    if (orig && orig.type) lineClasses.push(orig.type);
+    const marker = (orig && markerMap[orig.type]) || 'url(#' + prefix + '-ah-default)';
+    edgeRenderData.push({ pathD, lineClasses, marker });
+  });
+  stubEdges.forEach(e => {
+    const ports = getStubPorts(e, positions);
+    const pathD = `M ${ports.from.x} ${ports.from.y} L ${ports.to.x} ${ports.to.y}`;
+    const lineClasses = ['arrow-line'];
+    if (e.type) lineClasses.push(e.type);
+    const marker = markerMap[e.type] || 'url(#' + prefix + '-ah-default)';
+    edgeRenderData.push({ pathD, lineClasses, marker });
+  });
+
+  const labelInfos = [];
+  dagreEdges.forEach(de => {
+    const orig = de.original;
+    if (!orig || !orig.label) return;
+    let labelX, labelY;
+    if (de.labelPos) { labelX = de.labelPos.x; labelY = de.labelPos.y; }
+    else { const pts = de.points; labelX = pts[Math.floor(pts.length / 2)].x; labelY = pts[Math.floor(pts.length / 2)].y; }
+    labelInfos.push({ edge: orig, x: labelX, y: labelY - 8, text: orig.label, color: orig.labelColor, w: measureLabelWidth(orig.label) });
+  });
+  stubEdges.forEach(e => {
+    if (!e.label) return;
+    const ports = getStubPorts(e, positions);
+    labelInfos.push({ edge: e, x: (ports.from.x + ports.to.x) / 2, y: (ports.from.y + ports.to.y) / 2 - 8, text: e.label, color: e.labelColor, w: measureLabelWidth(e.label) });
+  });
+  resolveLabelCollisions(labelInfos);
+
+  const svg = el('svg', { width: svgWidth, height: svgHeight, viewBox: '0 0 ' + svgWidth + ' ' + svgHeight });
+  svg.style.maxWidth = '100%';
+  svg.style.height = 'auto';
+  svg.appendChild(createDefs(prefix));
+
+  edgeRenderData.forEach(d => {
+    const path = el('path', { d: d.pathD, class: d.lineClasses.join(' '), opacity: '0.85' });
+    path.setAttribute('marker-end', d.marker);
+    svg.appendChild(path);
+  });
+  labelInfos.forEach(li => {
+    svg.appendChild(el('rect', { x: li.x - li.w / 2 - 3, y: li.y - 12, width: li.w + 6, height: 18, rx: 4, ry: 4, class: 'arrow-label-bg' }));
+    const lbl = el('text', { x: li.x, y: li.y, class: 'arrow-label', 'text-anchor': 'middle' });
+    if (li.color) lbl.setAttribute('style', 'fill:' + li.color);
+    lbl.textContent = li.text;
+    svg.appendChild(lbl);
+  });
+  scenario.nodes.forEach(n => { svg.appendChild(renderNode(n, positions[n.id])); });
+
+  container.appendChild(svg);
+}
+
+// ======================== Scenario Data ========================
+const SCENARIOS = {
+  s0: {
+    id: 's0',
+    nodes: [
+      { id: 's0_user',   label: '用户',     category: 'c-source',  fontSize: 14, fontWeight: 700, tip: '终端用户发起请求', repo: '' },
+      { id: 's0_gw',     label: 'Gateway',  category: 'c-gateway', fontSize: 13, fontWeight: 600, tip: '请求接入网关',     repo: 'org/gateway' },
+      { id: 's0_svc',    label: 'Service',  category: 'c-service', fontSize: 13, fontWeight: 600, tip: '核心业务服务',     repo: 'org/service' },
+      { id: 's0_db',     label: 'DB',        category: 'c-storage', fontSize: 13, fontWeight: 600, tip: '数据持久化存储',   repo: '' },
+      { id: 's0_cache',  label: 'Cache',     category: 'c-storage', fontSize: 13, fontWeight: 600, tip: '热点数据缓存',     repo: '' },
+      { id: 's0_resp',   label: '响应',      category: 'c-source',  fontSize: 14, fontWeight: 700, tip: '返回结果给用户',   repo: '' }
+    ],
+    edges: [
+      { from: 's0_user',  to: 's0_gw',   type: 'arrow-signal',  label: '请求', labelColor: '#a16207' },
+      { from: 's0_gw',    to: 's0_svc',  type: 'arrow-redirect',label: '路由', labelColor: '#7c3aed' },
+      { from: 's0_svc',   to: 's0_db',   type: 'arrow-data',    label: '查询', labelColor: '#15803d' },
+      { from: 's0_svc',   to: 's0_cache',type: 'arrow-data',    label: '缓存', labelColor: '#15803d' },
+      { from: 's0_db',    to: 's0_resp', type: 'arrow-data',    label: '数据', labelColor: '#15803d' },
+      { from: 's0_cache', to: 's0_resp', type: 'arrow-data',    label: '缓存数据', labelColor: '#15803d' },
+      { from: 's0_svc',   to: 's0_resp', type: 'arrow-signal',  label: '处理结果', labelColor: '#a16207' }
+    ]
+  },
+  s1: {
+    id: 's1',
+    nodes: [
+      { id: 's1_client', label: '客户端',   category: 'c-source',   fontSize: 14, fontWeight: 700, tip: '请求发起方', repo: '' },
+      { id: 's1_proxy',  label: 'Proxy',    category: 'c-gateway',  fontSize: 13, fontWeight: 600, tip: '代理转发',   repo: 'org/proxy' },
+      { id: 's1_primary',label: '主节点',    category: 'c-service',  fontSize: 13, fontWeight: 600, tip: '主处理节点', repo: 'org/primary' },
+      { id: 's1_replica',label: '副本节点',  category: 'c-service',  fontSize: 13, fontWeight: 600, tip: '同步副本',   repo: 'org/replica' },
+      { id: 's1_sync',   label: 'SyncSvc',  category: 'c-control',  fontSize: 12, fontWeight: 600, tip: '同步管控',   repo: 'org/sync' },
+      { id: 's1_store',  label: 'Store',    category: 'c-storage',  fontSize: 13, fontWeight: 600, tip: '持久存储',   repo: '' }
+    ],
+    edges: [
+      { from: 's1_client',  to: 's1_proxy',   type: 'arrow-signal',  label: '请求', labelColor: '#a16207' },
+      { from: 's1_proxy',   to: 's1_primary',  type: 'arrow-redirect',label: '转发', labelColor: '#7c3aed' },
+      { from: 's1_primary', to: 's1_store',    type: 'arrow-data',    label: '写入', labelColor: '#15803d' },
+      { from: 's1_sync',    to: 's1_replica',  type: 'arrow-cmd',     label: '同步指令', labelColor: '#c2410c' },
+      { from: 's1_primary', to: 's1_replica',  type: 'arrow-data',    label: '数据回推', labelColor: '#15803d' },
+      { from: 's1_replica', to: 's1_store',    type: 'arrow-data',    label: '副本写入', labelColor: '#15803d' }
+    ]
+  },
+  s2: {
+    id: 's2',
+    nodes: [
+      { id: 's2_input',  label: '输入',    category: 'c-source',   fontSize: 14, fontWeight: 700, tip: '外部数据入口', repo: '' },
+      { id: 's2_proc',   label: 'Processor',category: 'c-service',  fontSize: 13, fontWeight: 600, tip: '数据处理引擎', repo: 'org/processor' },
+      { id: 's2_ctrl',   label: 'Controller',category: 'c-control', fontSize: 13, fontWeight: 600, tip: '流程管控节点', repo: 'org/controller' },
+      { id: 's2_output', label: '输出',      category: 'c-source',   fontSize: 14, fontWeight: 700, tip: '最终产出',     repo: '' }
+    ],
+    edges: [
+      { from: 's2_input',  to: 's2_proc', type: 'arrow-data',    label: '原始数据', labelColor: '#15803d' },
+      { from: 's2_proc',   to: 's2_ctrl', type: 'arrow-signal',  label: '上报状态', labelColor: '#a16207' },
+      { from: 's2_ctrl',   to: null,      type: 'arrow-redirect',label: '分配任务', labelColor: '#7c3aed', stubLength: 55, stubDirection: 'down' },
+      { from: 's2_proc',   to: 's2_output',type: 'arrow-data',  label: '处理结果', labelColor: '#15803d' }
+    ]
+  }
+};
+
+// ======================== Init ========================
+function init() {
+  for (const [id, scenario] of Object.entries(SCENARIOS)) {
+    const container = document.getElementById(id);
+    if (container) renderScenario(scenario, container);
+  }
+
+  const tip = document.getElementById('tooltip');
+  const tipTitle = document.getElementById('tip-title');
+  const tipRepo = document.getElementById('tip-repo');
+  const tipDesc = document.getElementById('tip-desc');
+
+  document.addEventListener('mouseover', function(e) {
+    const nb = e.target.closest('.node-box[data-tip]');
+    if (!nb) return;
+    tipTitle.textContent = nb.querySelector('text').textContent;
+    tipRepo.textContent = nb.dataset.repo ? '仓库: ' + nb.dataset.repo : '';
+    tipDesc.textContent = nb.dataset.tip;
+    tip.style.display = 'block';
+    const rect = nb.getBoundingClientRect();
+    let left = rect.left + rect.width / 2 - 130;
+    let top = rect.bottom + 8;
+    if (left < 8) left = 8;
+    if (left + 260 > window.innerWidth) left = window.innerWidth - 268;
+    if (top + 100 > window.innerHeight) top = rect.top - 110;
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+  });
+  document.addEventListener('mouseout', function(e) {
+    const nb = e.target.closest('.node-box[data-tip]');
+    if (!nb) return;
+    if (!nb.contains(e.relatedTarget)) tip.style.display = 'none';
+  });
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
