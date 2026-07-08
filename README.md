@@ -36,3 +36,11 @@ Claude Code 技能集合。每个子目录是一个独立技能，包含 `SKILL.
 | 技能 | 来源 | 触发场景 |
 |------|------|---------|
 | neat-freak | [khazix-skills](https://github.com/KKKKhazix/khazix-skills/tree/main/neat-freak) | 会话结束后的文档与记忆同步审查 |
+
+### 远程工具
+
+以下 CLI 工具不在本仓库中，需全局安装。详见 [`REMOTE_DEPS.md`](REMOTE_DEPS.md)。
+
+| 工具 | 仓库 | 用途 |
+|------|------|------|
+| [OpenSpec](https://github.com/Fission-AI/OpenSpec) | `@fission-ai/openspec` | Spec-Driven Development 框架：`/opsx:explore` → `/opsx:propose` → `/opsx:apply` → `/opsx:archive` |
