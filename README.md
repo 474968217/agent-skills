@@ -2,9 +2,16 @@
 
 Claude Code 技能集合。每个子目录是一个独立技能，包含 `SKILL.md`（入口）及可选的 `references/`、`scripts/`、`assets/`。
 
-> **入口文档**：[`REMOTE_DEPS.md`](REMOTE_DEPS.md) — 远程依赖安装与更新引导（新增工具/技能时先看这个）。
+## 快速开始
 
-## 技能索引
+首次进入本仓库时，按以下顺序初始化：
+
+1. **安装远程依赖** — 阅读 [`REMOTE_DEPS.md`](REMOTE_DEPS.md)，按表格执行安装命令
+2. **验证** — 确认所有依赖版本正确、工具可正常调用
+
+> 日常工作中如需新增远程工具或技能，参考 [`REMOTE_DEPS.md`](REMOTE_DEPS.md) 的安装流程和检查清单。
+
+## 本地技能
 
 ### 开发流程
 
@@ -33,14 +40,14 @@ Claude Code 技能集合。每个子目录是一个独立技能，包含 `SKILL.
 
 以下技能不在本仓库中，需从远程安装。详见 [`REMOTE_DEPS.md`](REMOTE_DEPS.md)。
 
-| 技能 | 来源 | 触发场景 |
-|------|------|---------|
-| neat-freak | [khazix-skills](https://github.com/KKKKhazix/khazix-skills/tree/main/neat-freak) | 会话结束后的文档与记忆同步审查 |
+| 技能 | 来源 | 安装命令 | 触发场景 |
+|------|------|---------|---------|
+| neat-freak | [khazix-skills](https://github.com/KKKKhazix/khazix-skills/tree/main/neat-freak) | sparse-checkout 或克隆后复制 `neat-freak/` 到本仓库根目录 | 会话结束后的文档与记忆同步审查 |
 
 ### 远程工具
 
 以下 CLI 工具不在本仓库中，需全局安装。详见 [`REMOTE_DEPS.md`](REMOTE_DEPS.md)。
 
-| 工具 | 仓库 | 用途 |
-|------|------|------|
-| [OpenSpec](https://github.com/Fission-AI/OpenSpec) | `@fission-ai/openspec` | Spec-Driven Development 框架：`/opsx:explore` → `/opsx:propose` → `/opsx:apply` → `/opsx:archive` |
+| 工具 | 仓库 | 安装命令 | 用途 |
+|------|------|---------|------|
+| [OpenSpec](https://github.com/Fission-AI/OpenSpec) | `@fission-ai/openspec` | `npm install -g @fission-ai/openspec@latest && openspec init` | CLI 工具 + Skill，提供 `/opsx:explore` `/opsx:propose` `/opsx:apply` `/opsx:archive` |
