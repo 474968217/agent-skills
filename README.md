@@ -29,8 +29,10 @@ Claude Code 技能集合。每个子目录是一个独立技能，包含 `SKILL.
 | [docs-page](docs-page/) | 三栏技术文档页："技术文档"、"API文档"、"docs page" |
 | [topo-page](topo-page/) | 知识图谱/架构图页面生成 |
 
-### 维护
+### 远程技能
 
-| 技能 | 触发场景 |
-|------|---------|
-| [neat-freak](neat-freak/) | 会话结束后的文档与记忆同步审查："sync up"、"整理文档"、"整理一下" |
+以下技能不在本仓库中，需从远程安装。详见 [`REMOTE_DEPS.md`](REMOTE_DEPS.md)。
+
+| 技能 | 来源 | 触发场景 |
+|------|------|---------|
+| neat-freak | [khazix-skills](https://github.com/KKKKhazix/khazix-skills/tree/main/neat-freak) | 会话结束后的文档与记忆同步审查 |

@@ -95,10 +95,9 @@
 
 ### Claude Code Skills
 
-<!-- 后续添加的远程 skill 仓库在此列出，格式参考：
-| [Skill 名称](repo-url) | 简介 | 安装说明 |
+| 技能 | 仓库 | 安装说明 |
 |------|------|---------|
--->
+| [neat-freak](https://github.com/KKKKhazix/khazix-skills/tree/main/neat-freak) | [KKKKhazix/khazix-skills](https://github.com/KKKKhazix/khazix-skills) | 克隆 `neat-freak/` 目录到本仓库根目录。触发词："sync up"、"整理文档"、"整理一下"等。与 task-summary 协同——触发词重叠时 task-summary 优先 |
 
 ---
 
