@@ -99,6 +99,22 @@ Responsive breakpoints:
 }
 ```
 
+**Legend** (`.legend-row`, `.legend-item`, `.legend-dot`)
+- `.legend-row`: flex row, wrap, gap 12px, margin-bottom 12px
+- `.legend-item`: flex, align-items center, gap 6px, font-size 13px, color matching context
+- `.legend-dot`: 14×14px, border-radius 3px, border 1.5px solid; background and border-color set inline per category
+- Use two `.legend-row` divs when categories exceed one line
+
+### VitePress Integration
+
+When the project has the `docs-base` VitePress submodule (at `docs/vite/base/`), prefer generating a **VitePress markdown page** (`.md`) over standalone HTML. The VitePress theme already implements this entire design system. Key patterns:
+
+- Topology diagrams use `<TopologyDiagram>` Vue component imported from `../base/theme/TopologyDiagram.vue`
+- Wrap with `<ClientOnly>` since dagre.js needs browser APIs
+- Data defined in `<script setup>` as JS objects (`scenarios`, `tabs`)
+- Tab switching via `@tab-change` event + `v-show` on flow sections
+- Refer to `media_backend/docs/vite/architecture/topology.md` for a complete example
+
 ## Hard Constraints
 
 1. **Single-file HTML** — all CSS inline, no external JS dependencies
