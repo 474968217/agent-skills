@@ -1,6 +1,9 @@
 # Agent Skills
 
-Claude Code 技能集合。每个子目录是一个独立技能，包含 `SKILL.md`（入口）及可选的 `references/`、`scripts/`、`assets/`。
+本仓库是 agent 自举部署的技能集合。agent 拿到此仓库后，目标单一：**准备好所有需要的技能**。
+
+- **本地技能**：仓库内保留完整文件（`SKILL.md` + `references/`、`scripts/`、`assets/` 等），即装即用
+- **远程技能**：不落盘到本仓库（远端会更新），仅在 `REMOTE_DEPS.md` 中保留索引（源仓库地址 + 拉取命令），agent 自行按索引拉取
 
 ## 快速开始
 
@@ -36,15 +39,16 @@ Claude Code 技能集合。每个子目录是一个独立技能，包含 `SKILL.
 | [docs-page](docs-page/) | 三栏技术文档页："技术文档"、"API文档"、"docs page" |
 | [topo-page](topo-page/) | 知识图谱/架构图页面生成 |
 
-### 远程技能
+## 远程技能
 
 以下技能不在本仓库中，需从远程安装。详见 [`REMOTE_DEPS.md`](REMOTE_DEPS.md)。
 
-| 技能 | 来源 | 安装命令 | 触发场景 |
-|------|------|---------|---------|
-| neat-freak | [khazix-skills](https://github.com/KKKKhazix/khazix-skills/tree/main/neat-freak) | sparse-checkout 或克隆后复制 `neat-freak/` 到本仓库根目录 | 会话结束后的文档与记忆同步审查 |
+| 技能 | 来源 | 触发场景 |
+|------|------|---------|
+| [neat-freak](https://github.com/KKKKhazix/khazix-skills/tree/main/neat-freak) | [khazix-skills](https://github.com/KKKKhazix/khazix-skills) | 会话结束后的文档与记忆同步审查 |
+| [leader](https://github.com/KKKKhazix/khazix-skills/tree/main/leader) | [khazix-skills](https://github.com/KKKKhazix/khazix-skills) | 一句话想法拆成独立目标任务书，输出可直接粘贴到 `/goal` 执行 |
 
-### 远程工具
+## 远程工具
 
 以下 CLI 工具不在本仓库中，需全局安装。详见 [`REMOTE_DEPS.md`](REMOTE_DEPS.md)。
 

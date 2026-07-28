@@ -71,6 +71,7 @@ OpenSpec 既是 CLI 工具也是 Skill 集合——安装并 `openspec init` 后
 | 技能 | 安装命令 | 说明 |
 |------|---------|------|
 | [neat-freak](https://github.com/KKKKhazix/khazix-skills/tree/main/neat-freak) | `git clone --depth 1 https://github.com/KKKKhazix/khazix-skills.git /tmp/ks && cp -r /tmp/ks/neat-freak ./ && rm -rf /tmp/ks` | 与 task-summary 协同，触发词重叠时 task-summary 优先 |
+| [leader](https://github.com/KKKKhazix/khazix-skills/tree/main/leader) | `git clone --depth 1 https://github.com/KKKKhazix/khazix-skills.git /tmp/ks && cp -r /tmp/ks/leader ./ && rm -rf /tmp/ks` | 一句话想法拆成独立目标任务书，输出可直接粘贴到 /goal 执行 |
 
 ---
 
