@@ -72,7 +72,9 @@ OpenSpec 既是 CLI 工具也是 Skill 集合——安装并 `openspec init` 后
 |------|---------|------|
 | [neat-freak](https://github.com/KKKKhazix/khazix-skills/tree/main/neat-freak) | `git clone --depth 1 https://github.com/KKKKhazix/khazix-skills.git /tmp/ks && cp -r /tmp/ks/neat-freak ./ && rm -rf /tmp/ks` | 与 task-summary 协同，触发词重叠时 task-summary 优先 |
 | [leader](https://github.com/KKKKhazix/khazix-skills/tree/main/leader) | `git clone --depth 1 https://github.com/KKKKhazix/khazix-skills.git /tmp/ks && cp -r /tmp/ks/leader ./ && rm -rf /tmp/ks` | 一句话想法拆成独立目标任务书，输出可直接粘贴到 /goal 执行 |
-
+| [improve-codebase-architecture](https://github.com/mattpocock/skills/tree/main/skills/engineering/improve-codebase-architecture) | `git clone --depth 1 https://github.com/mattpocock/skills.git /tmp/ms && cp -r /tmp/ms/skills/engineering/improve-codebase-architecture ./ && rm -rf /tmp/ms` | 扫描代码库寻找架构深化机会，生成可视化 HTML 报告并交互式评审 |
+| [diagnosing-bugs](https://github.com/mattpocock/skills/tree/main/skills/engineering/diagnosing-bugs) | `git clone --depth 1 https://github.com/mattpocock/skills.git /tmp/ms && cp -r /tmp/ms/skills/engineering/diagnosing-bugs ./ && rm -rf /tmp/ms` | 硬 Bug 与性能回归诊断循环，触发词："diagnose"、"debug this"、"坏了" |
+| [handoff](https://github.com/mattpocock/skills/tree/main/skills/productivity/handoff) | `git clone --depth 1 https://github.com/mattpocock/skills.git /tmp/ms && cp -r /tmp/ms/skills/productivity/handoff ./ && rm -rf /tmp/ms` | 将当前会话压缩为交接文档，供其他 agent 接续工作 |
 ---
 
 ## 新增依赖检查清单

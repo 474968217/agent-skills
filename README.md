@@ -47,6 +47,9 @@
 |------|------|---------|
 | [neat-freak](https://github.com/KKKKhazix/khazix-skills/tree/main/neat-freak) | [khazix-skills](https://github.com/KKKKhazix/khazix-skills) | 会话结束后的文档与记忆同步审查 |
 | [leader](https://github.com/KKKKhazix/khazix-skills/tree/main/leader) | [khazix-skills](https://github.com/KKKKhazix/khazix-skills) | 一句话想法拆成独立目标任务书，输出可直接粘贴到 `/goal` 执行 |
+| [improve-codebase-architecture](https://github.com/mattpocock/skills/tree/main/skills/engineering/improve-codebase-architecture) | [mattpocock/skills](https://github.com/mattpocock/skills) | 扫描代码库寻找架构深化机会，生成可视化 HTML 报告并交互式评审 |
+| [diagnosing-bugs](https://github.com/mattpocock/skills/tree/main/skills/engineering/diagnosing-bugs) | [mattpocock/skills](https://github.com/mattpocock/skills) | 硬 Bug 与性能回归诊断循环："diagnose"、"debug this"、"坏了" |
+| [handoff](https://github.com/mattpocock/skills/tree/main/skills/productivity/handoff) | [mattpocock/skills](https://github.com/mattpocock/skills) | 将当前会话压缩为交接文档，供其他 agent 接续工作 |
 
 ## 远程工具
 
