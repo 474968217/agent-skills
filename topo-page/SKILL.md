@@ -1,6 +1,7 @@
 ---
 name: topo-page
-description: Generate an interactive SVG topology diagram with dagre.js layout engine as a single-file HTML fragment. Produces colored node boxes by category, typed edge paths (solid/dashed/color-coded), edge labels with collision avoidance, stub dangling arrows, and hover tooltips. Use when the user wants to create an architecture topology, flow diagram, pipeline topology, or system flow chart. Triggers: "拓扑图", "架构拓扑", "topo page", "topology page", "场景拓扑", "流程拓扑图", "dagre拓扑图".
+description: >-
+  Generate an interactive SVG topology diagram with dagre.js layout engine as a single-file HTML fragment. Produces colored node boxes by category, typed edge paths (solid/dashed/color-coded), edge labels with collision avoidance, stub dangling arrows, and hover tooltips. Use when the user wants to create an architecture topology, flow diagram, pipeline topology, or system flow chart. Triggers: "拓扑图", "架构拓扑", "topo page", "topology page", "场景拓扑", "流程拓扑图", "dagre拓扑图".
 ---
 
 # Topo Page

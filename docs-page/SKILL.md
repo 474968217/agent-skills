@@ -1,6 +1,7 @@
 ---
 name: docs-page
-description: Generate a three-column technical documentation page (sidebar nav + article body + right TOC) as a single-file HTML. Use when the user wants to create API docs, tutorial pages, engineering guides, or long-form reference documentation. Triggers: "技术文档", "API文档", "docs page", "文档页", "教程页", "guide page".
+description: >-
+  Generate a three-column technical documentation page (sidebar nav + article body + right TOC) as a single-file HTML. Use when the user wants to create API docs, tutorial pages, engineering guides, or long-form reference documentation. Triggers: "技术文档", "API文档", "docs page", "文档页", "教程页", "guide page".
 ---
 
 # Docs Page
